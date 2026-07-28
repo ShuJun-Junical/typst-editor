@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --color-canvas: #f5f5f4;
+  --color-panel: #ffffff;
+  --color-line: #e7e5e4;
+  --color-ink: #1c1917;
+  --color-muted: #78716c;
+  --color-accent: #2563eb;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.dark {
+  --color-canvas: #171717;
+  --color-panel: #1c1917;
+  --color-line: #44403c;
+  --color-ink: #fafaf9;
+  --color-muted: #a8a29e;
+}
+
+.typst-preview svg {
+  display: block;
+  width: min(100%, 794px);
+  height: auto;
+  margin: 0 auto 24px;
+  background: white;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 14%);
+}
