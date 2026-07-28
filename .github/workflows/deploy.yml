@@ -1,9 +1,12 @@
-name: Deploy to Tencent COS
+name: Deploy to COS
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: production
@@ -12,17 +15,14 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    environment: production
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.13.0
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -31,17 +31,20 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Sync dist to COS
-        env:
-          COS_SECRET_ID: ${{ secrets.COS_SECRET_ID }}
-          COS_SECRET_KEY: ${{ secrets.COS_SECRET_KEY }}
-          COS_BUCKET: ${{ secrets.COS_BUCKET }}
-          COS_REGION: ${{ secrets.COS_REGION }}
+      - name: Install COSCLI
         run: |
-          python -m pip install --disable-pip-version-check coscmd
-          coscmd config -a "$COS_SECRET_ID" -s "$COS_SECRET_KEY" -b "$COS_BUCKET" -r "$COS_REGION"
-          coscmd upload -rs --delete dist/ /
+          curl -fsSLo coscli https://cosbrowser.cloud.tencent.com/software/coscli/coscli-linux-amd64
+          echo "7165f2ae16c5f7ac495864c963ca574a76e04ec72680d7bc8a8eee3234d8cf91  coscli" | sha256sum --check
+          chmod +x coscli
+
+      - name: Deploy
+        env:
+          TENCENT_CLOUD_SECRET_ID: ${{ secrets.TENCENT_CLOUD_SECRET_ID }}
+          TENCENT_CLOUD_SECRET_KEY: ${{ secrets.TENCENT_CLOUD_SECRET_KEY }}
+          TENCENT_CLOUD_BUCKET: ${{ vars.TENCENT_CLOUD_BUCKET }}
+          TENCENT_CLOUD_REGION: ${{ vars.TENCENT_CLOUD_REGION }}
+          TENCENT_CLOUD_ENDPOINT: ${{ vars.TENCENT_CLOUD_ENDPOINT }}
+        run: |
+          ./coscli config set --secret_id "$TENCENT_CLOUD_SECRET_ID" --secret_key "$TENCENT_CLOUD_SECRET_KEY"
+          ./coscli config add --bucket "$TENCENT_CLOUD_BUCKET" --region "$TENCENT_CLOUD_REGION" --endpoint "$TENCENT_CLOUD_ENDPOINT" --alias site
+          ./coscli sync dist/ cos://site/ --recursive --delete --force --routines 10
